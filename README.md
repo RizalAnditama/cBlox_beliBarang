@@ -11,8 +11,12 @@ go version
 Which should show the version of your Go installation.
 ## Run Locally
 
-Assuming you have cloned the repo and installed [Go](https://golang.org/dl/), you can run the the code via a command prompt/terminal. Start the app by running:
+Assuming you have cloned the repo and installed [Go](https://golang.org/dl/), you can run the the code via a command prompt/terminal. But first you had to download and install [gin](github.com/gin-gonic/gin). by running:
+```bash
+go get -u github.com/gin-gonic/gin
+```
 
+Then start the app by running:
 ```bash
 go run .\hello-world.go
 ```
