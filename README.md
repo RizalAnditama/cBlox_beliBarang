@@ -18,5 +18,5 @@ go get -u github.com/gin-gonic/gin
 
 Then start the app by running:
 ```bash
-go run .\hello-world.go
+go run .\server.go
 ```
