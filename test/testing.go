@@ -1,4 +1,4 @@
-package main
+package test
 
 import (
 	"net/http"
@@ -25,6 +25,7 @@ func getAlbums(c *gin.Context) {
 
 func main() {
 	router := gin.Default()
+	
 	router.GET("/albums", getAlbums)
 
 	router.Run("localhost:8080")
