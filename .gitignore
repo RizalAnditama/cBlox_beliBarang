@@ -1,3 +1,5 @@
 *.pdf
 *.pptx
 *.ppt
+*.json
+tmp
