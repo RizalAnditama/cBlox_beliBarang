@@ -1,7 +1,9 @@
 package main
 
 import (
+	"encoding/base64"
 	"net/http"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/driver/mysql"
@@ -45,8 +47,6 @@ func initDB() {
 		panic("Failed to connect to the database")
 	}
 
-	db.AutoMigrate(&StokBaju{})
-
 	users := []User{
 		{ID: 1, Username: "rizalandit", Password: "sofan"},
 		{ID: 2, Username: "root", Password: "root"},
@@ -87,15 +87,53 @@ func initDB() {
 }
 
 func authenticateUser(c *gin.Context) {
-	username := c.GetHeader("Username")
-	password := c.GetHeader("Password")
+	// Get the Authorization header
 
+	authHeader := c.GetHeader("Authorization")
+	if !strings.HasPrefix(authHeader, "Basic ") {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Authorization header required"})
+		c.Abort()
+		return
+	}
+
+	// Decode the base64 encoded username:password
+	payload, err := base64.StdEncoding.DecodeString(authHeader[6:])
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid authorization header"})
+		c.Abort()
+		return
+	}
+
+	// Split username and password
+	userPass := strings.SplitN(string(payload), ":", 2)
+	if len(userPass) != 2 {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid authorization format"})
+		c.Abort()
+		return
+	}
+
+	username := userPass[0]
+	password := userPass[1]
+
+	// type Userstuff struct {
+	// 	Username string `json:"username"`
+	// 	Password string `json:"password"`
+	// }
+
+	// arr := []Userstuff{
+	// 	{Username: username, Password: password},
+	// }
+
+	// c.JSON(200, arr)
+	// Check credentials in the database
 	var user User
 	if err := db.Where("username = ? AND password = ?", username, password).First(&user).Error; err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid credentials"})
 		c.Abort()
 		return
 	}
+
+	// Store user ID in the context for further use
 	c.Set("userID", user.ID)
 	c.Next()
 }
@@ -191,7 +229,7 @@ func main() {
 	authRoutes := router.Group("/")
 	authRoutes.Use(authenticateUser)
 	{
-		authRoutes.POST("/keranjang", addBajuToKeranjang)
+		authRoutes.POST("/keranjang/:", addBajuToKeranjang)
 		authRoutes.GET("/keranjang", getKeranjang)
 		authRoutes.POST("/checkout", checkoutKeranjang)
 		authRoutes.GET("/pesanan", getOrders)
