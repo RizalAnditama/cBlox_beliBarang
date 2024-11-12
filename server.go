@@ -229,7 +229,7 @@ func main() {
 	authRoutes := router.Group("/")
 	authRoutes.Use(authenticateUser)
 	{
-		authRoutes.POST("/keranjang/:", addBajuToKeranjang)
+		authRoutes.POST("/keranjang", addBajuToKeranjang)
 		authRoutes.GET("/keranjang", getKeranjang)
 		authRoutes.POST("/checkout", checkoutKeranjang)
 		authRoutes.GET("/pesanan", getOrders)
