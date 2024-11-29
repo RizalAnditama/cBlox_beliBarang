@@ -3,3 +3,7 @@
 *.ppt
 *.json
 tmp
+*.png
+*.jpeg
+*.jpg
+.env

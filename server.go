@@ -114,17 +114,6 @@ func authenticateUser(c *gin.Context) {
 
 	username := userPass[0]
 	password := userPass[1]
-
-	// type Userstuff struct {
-	// 	Username string `json:"username"`
-	// 	Password string `json:"password"`
-	// }
-
-	// arr := []Userstuff{
-	// 	{Username: username, Password: password},
-	// }
-
-	// c.JSON(200, arr)
 	// Check credentials in the database
 	var user User
 	if err := db.Where("username = ? AND password = ?", username, password).First(&user).Error; err != nil {
