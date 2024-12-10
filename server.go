@@ -206,6 +206,42 @@ func getOrderByID(c *gin.Context) {
 	c.JSON(http.StatusOK, order)
 }
 
+func filterBaju(c *gin.Context) {
+	var stokBaju []StokBaju
+
+	// Ambil parameter filter dari query
+	jenis := c.Query("jenis")
+	warna := c.Query("warna")
+	merek := c.Query("merek")
+	minHarga := c.Query("min_harga")
+	maxHarga := c.Query("max_harga")
+
+	// Build query dengan kondisi
+	query := db.Model(&StokBaju{})
+	if jenis != "" {
+		query = query.Where("jenis = ?", jenis)
+	}
+	if warna != "" {
+		query = query.Where("warna = ?", warna)
+	}
+	if merek != "" {
+		query = query.Where("merek = ?", merek)
+	}
+	if minHarga != "" {
+		query = query.Where("harga >= ?", minHarga)
+	}
+	if maxHarga != "" {
+		query = query.Where("harga <= ?", maxHarga)
+	}
+
+	// Eksekusi query
+	query.Find(&stokBaju)
+
+	// Return hasil
+	c.JSON(http.StatusOK, stokBaju)
+}
+
+
 func main() {
 	initDB()
 	router := gin.Default()
@@ -213,6 +249,7 @@ func main() {
 	// Item routes
 	router.GET("/baju", getStokBaju)
 	router.GET("/baju/:id", getBajuByID)
+	router.GET("/baju/filter", filterBaju)
 
 	// Authenticated routes
 	authRoutes := router.Group("/")
@@ -226,4 +263,5 @@ func main() {
 	}
 
 	router.Run(":8080")
+
 }
