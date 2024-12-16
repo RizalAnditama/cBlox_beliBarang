@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/base64"
+	"fmt"
 	"net/http"
 	"strings"
 
@@ -41,7 +42,8 @@ var db *gorm.DB
 var err error
 
 func initDB() {
-	dsn := "root:@tcp(localhost:3306)/sddp_beli_baju"
+	dbName := "sddp_beli_baju"
+	dsn := fmt.Sprintf("root:@tcp(localhost:3306)/%s", dbName)
 	db, err = gorm.Open(mysql.Open(dsn), &gorm.Config{})
 	if err != nil {
 		panic("Failed to connect to the database")
@@ -90,6 +92,7 @@ func authenticateUser(c *gin.Context) {
 	// Get the Authorization header
 
 	authHeader := c.GetHeader("Authorization")
+
 	if !strings.HasPrefix(authHeader, "Basic ") {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Authorization header required"})
 		c.Abort()
@@ -145,27 +148,36 @@ func getBajuByID(c *gin.Context) {
 }
 
 func addBajuToKeranjang(c *gin.Context) {
-	userID := c.GetInt("userID")
+	userID, exists := c.Get("userID")
+	if !exists {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "userID not found"})
+	}
 	var keranjang Keranjang
 	if err := c.ShouldBindJSON(&keranjang); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	keranjang.UserID = int32(userID)
+	keranjang.UserID = int32(userID.(int32))
 	db.Create(&keranjang)
 	c.JSON(http.StatusOK, gin.H{"message": "Item added to cart"})
 }
 
 func getKeranjang(c *gin.Context) {
-	userID := c.GetInt("userID")
+	userID, exists := c.Get("userID")
+	if !exists {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "userID not found"})
+	}
 	var keranjangs []Keranjang
 	db.Where("user_id = ?", userID).Find(&keranjangs)
 	c.JSON(http.StatusOK, keranjangs)
 }
 
 func checkoutKeranjang(c *gin.Context) {
-	userID := c.GetInt("userID")
+	userID, exists := c.Get("userID")
+	if !exists {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "userID not found"})
+	}
 	var keranjangs []Keranjang
 	db.Where("user_id = ?", userID).Find(&keranjangs)
 
@@ -178,7 +190,7 @@ func checkoutKeranjang(c *gin.Context) {
 	}
 
 	// Create Order
-	order := Order{UserID: int32(userID), Total: total}
+	order := Order{UserID: int32(userID.(int32)), Total: total}
 	db.Create(&order)
 
 	// Clear Keranjang
@@ -188,14 +200,20 @@ func checkoutKeranjang(c *gin.Context) {
 }
 
 func getOrders(c *gin.Context) {
-	userID := c.GetInt("userID")
+	userID, exists := c.Get("userID")
+	if !exists {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "userID not found"})
+	}
 	var orders []Order
 	db.Where("user_id = ?", userID).Find(&orders)
 	c.JSON(http.StatusOK, orders)
 }
 
 func getOrderByID(c *gin.Context) {
-	userID := c.GetInt("userID")
+	userID, exists := c.Get("userID")
+	if !exists {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "userID not found"})
+	}
 	id := c.Param("id")
 
 	var order Order
@@ -237,29 +255,30 @@ func filterBaju(c *gin.Context) {
 	// Eksekusi query
 	query.Find(&stokBaju)
 
-	// Return hasil
-	c.JSON(http.StatusOK, stokBaju)
-}
+	stoks := query.Find(stokBaju)
 
+	// Return hasil
+	c.JSON(http.StatusOK, stoks)
+}
 
 func main() {
 	initDB()
 	router := gin.Default()
 
 	// Item routes
-	router.GET("/baju", getStokBaju)
-	router.GET("/baju/:id", getBajuByID)
-	router.GET("/baju/filter", filterBaju)
+	router.GET("/baju", getStokBaju)       //
+	router.GET("/baju/:id", getBajuByID)   //
+	router.GET("/baju/filter", filterBaju) //
 
 	// Authenticated routes
 	authRoutes := router.Group("/")
 	authRoutes.Use(authenticateUser)
 	{
-		authRoutes.POST("/keranjang", addBajuToKeranjang)
-		authRoutes.GET("/keranjang", getKeranjang)
-		authRoutes.POST("/checkout", checkoutKeranjang)
-		authRoutes.GET("/pesanan", getOrders)
-		authRoutes.GET("/pesanan/:id", getOrderByID)
+		authRoutes.POST("/keranjang", addBajuToKeranjang) //
+		authRoutes.GET("/keranjang", getKeranjang)        //
+		authRoutes.POST("/checkout", checkoutKeranjang)   //
+		authRoutes.GET("/pesanan", getOrders)             //
+		authRoutes.GET("/pesanan/:id", getOrderByID)      //
 	}
 
 	router.Run(":8080")
