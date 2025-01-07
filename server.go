@@ -225,41 +225,43 @@ func getOrderByID(c *gin.Context) {
 }
 
 func filterBaju(c *gin.Context) {
-	var stokBaju []StokBaju
+    var stokBaju []StokBaju
 
-	// Ambil parameter filter dari query
-	jenis := c.Query("jenis")
-	warna := c.Query("warna")
-	merek := c.Query("merek")
-	minHarga := c.Query("min_harga")
-	maxHarga := c.Query("max_harga")
+    // Get filter parameters from query
+    jenis := c.Query("jenis")
+    warna := c.Query("warna")
+    merek := c.Query("merek")
+    minHarga := c.Query("min_harga")
+    maxHarga := c.Query("max_harga")
 
-	// Build query dengan kondisi
-	query := db.Model(&StokBaju{})
-	if jenis != "" {
-		query = query.Where("jenis = ?", jenis)
-	}
-	if warna != "" {
-		query = query.Where("warna = ?", warna)
-	}
-	if merek != "" {
-		query = query.Where("merek = ?", merek)
-	}
-	if minHarga != "" {
-		query = query.Where("harga >= ?", minHarga)
-	}
-	if maxHarga != "" {
-		query = query.Where("harga <= ?", maxHarga)
-	}
+    // Build query with conditions
+    query := db.Model(&StokBaju{})
+    if jenis != "" {
+        query = query.Where("jenis = ?", jenis)
+    }
+    if warna != "" {
+        query = query.Where("warna = ?", warna)
+    }
+    if merek != "" {
+        query = query.Where("merek = ?", merek)
+    }
+    if minHarga != "" {
+        query = query.Where("harga >= ?", minHarga)
+    }
+    if maxHarga != "" {
+        query = query.Where("harga <= ?", maxHarga)
+    }
 
-	// Eksekusi query
-	query.Find(&stokBaju)
+    // Execute query
+    if err := query.Find(&stokBaju).Error; err != nil {
+        c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch data"})
+        return
+    }
 
-	stoks := query.Find(stokBaju)
-
-	// Return hasil
-	c.JSON(http.StatusOK, stoks)
+    // Return results
+    c.JSON(http.StatusOK, stokBaju)
 }
+
 
 func main() {
 	initDB()
